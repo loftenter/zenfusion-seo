@@ -25,6 +25,14 @@ Output:
   - SEO team fix list (Shopify admin accessible changes)
 """
 
+try:  # resolve google.com/goto passthrough URLs in SERP responses (see goto_resolver.py)
+    from .goto_resolver import fix_goto_urls as _fix_goto
+except ImportError:
+    try:
+        from goto_resolver import fix_goto_urls as _fix_goto
+    except ImportError:
+        def _fix_goto(data, endpoint=None):
+            return data
 import sys, json, os, re, time, urllib.request, urllib.parse, ssl, base64
 from collections import Counter, defaultdict
 from bs4 import BeautifulSoup
@@ -236,7 +244,7 @@ def fetch_ai_overview(keyword, creds):
         })
 
         with urllib.request.urlopen(req, timeout=60) as resp:
-            data = json.loads(resp.read())
+            data = _fix_goto(json.loads(resp.read()), 'serp/')
 
         items = data['tasks'][0]['result'][0].get('items', [])
 

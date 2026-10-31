@@ -17,6 +17,14 @@ Usage (cron):
     python3 index_verification_cron.py [--days 5] [--limit 500]
 """
 
+try:  # resolve google.com/goto passthrough URLs in SERP responses (see goto_resolver.py)
+    from .goto_resolver import fix_goto_urls as _fix_goto
+except ImportError:
+    try:
+        from goto_resolver import fix_goto_urls as _fix_goto
+    except ImportError:
+        def _fix_goto(data, endpoint=None):
+            return data
 import json, os, sys, base64, urllib.request, time, sqlite3
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
@@ -40,7 +48,7 @@ def dfs_api(endpoint, payload):
     req = urllib.request.Request(url, data=json.dumps(payload).encode(),
         headers={"Authorization": f"Basic {creds}", "Content-Type": "application/json"}, method="POST")
     with urllib.request.urlopen(req, timeout=60) as resp:
-        return json.loads(resp.read())
+        return _fix_goto(json.loads(resp.read()), endpoint)
 
 def check_google_indexed(url):
     """Check if a URL is indexed in Google using DataForSEO SERP API."""

@@ -29,6 +29,14 @@ Environment
   DATAFORSEO_PASSWORD - API password    (in ~/.hermes/.env)
 """
 
+try:  # resolve google.com/goto passthrough URLs in SERP responses (see goto_resolver.py)
+    from .goto_resolver import fix_goto_urls as _fix_goto
+except ImportError:
+    try:
+        from goto_resolver import fix_goto_urls as _fix_goto
+    except ImportError:
+        def _fix_goto(data, endpoint=None):
+            return data
 import os
 import sys
 import json
@@ -83,7 +91,7 @@ def _api_call(endpoint, payload, timeout=60):
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read())
+            return _fix_goto(json.loads(resp.read()), endpoint)
     except urllib.error.HTTPError as e:
         body = ''
         try:
