@@ -19,6 +19,14 @@ Environment:
   DATAFORSEO_LOGIN / DATAFORSEO_PASSWORD  in ~/.hermes/.env
 """
 
+try:  # resolve google.com/goto passthrough URLs in SERP responses (see goto_resolver.py)
+    from .goto_resolver import fix_goto_urls as _fix_goto
+except ImportError:
+    try:
+        from goto_resolver import fix_goto_urls as _fix_goto
+    except ImportError:
+        def _fix_goto(data, endpoint=None):
+            return data
 import os
 import re
 import sys
@@ -116,7 +124,7 @@ def dfs_post(path, task, timeout=90, retries=2):
     for attempt in range(retries + 1):
         try:
             r = requests.post(url, data=body, headers=headers, timeout=timeout)
-            data = r.json()
+            data = _fix_goto(r.json(), path)
             if r.status_code == 401 or data.get("status_code") == 40101:
                 sys.stderr.write("DataForSEO 401 — bad credentials.\n")
                 return None

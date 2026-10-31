@@ -99,6 +99,15 @@ INDEXBOLT_API_KEY=your_key
 PSI_API_KEY=your_key  # Optional, free tier works
 ```
 
+### Google `goto` URLs in SERP results
+
+Google now wraps result links in `https://google.com/goto?url=CAES...` redirects and, since 2026-10-30, throttles how many can be resolved per SERP page. DataForSEO's **Live** and **High Priority** SERP tasks therefore return roughly half of URLs still as goto links (Standard Priority resolves all of them, but more slowly).
+
+Every script that calls `serp/*` passes the response through `zenfusion_seo/goto_resolver.py`, which sends leftover goto links to DataForSEO's free `/v3/appendix/goto_url_converter` endpoint (100 URLs per call), swaps in the direct URL, keeps the original in `goto_url`, and corrects any `domain` that said `google.com`. Expect up to 40–60 s extra per SERP page when Google throttles. Rows that still can't be resolved are counted in `response["_goto"]` and flagged on stderr. Treat them as unknown, never as a google.com ranking.
+
+- Turn it off: `ZENFUSION_GOTO_RESOLVE=0`
+- Fix an already-saved SERP JSON in place: `python3 zenfusion_seo/goto_resolver.py --file path/to/serp.json`
+
 ### Run
 
 ```bash

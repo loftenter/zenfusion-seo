@@ -28,6 +28,14 @@ Environment:
   DATAFORSEO_PASSWORD - DataForSEO API password (from ~/.hermes/.env)
 """
 
+try:  # resolve google.com/goto passthrough URLs in SERP responses (see goto_resolver.py)
+    from .goto_resolver import fix_goto_urls as _fix_goto
+except ImportError:
+    try:
+        from goto_resolver import fix_goto_urls as _fix_goto
+    except ImportError:
+        def _fix_goto(data, endpoint=None):
+            return data
 import os
 import sys
 import json
@@ -201,7 +209,7 @@ def dfs_api_call(endpoint, payload=None, method='POST'):
         req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=API_TIMEOUT) as resp:
-            data = json.loads(resp.read())
+            data = _fix_goto(json.loads(resp.read()), endpoint)
         if data.get('status_code') != 20000:
             print(f"  API Error: {data.get('status_code')} - {data.get('status_message')}")
             return None

@@ -29,6 +29,14 @@ Environment:
   DATAFORSEO_LOGIN, DATAFORSEO_PASSWORD — in ~/.hermes/.env or env vars
 """
 
+try:  # resolve google.com/goto passthrough URLs in SERP responses (see goto_resolver.py)
+    from .goto_resolver import fix_goto_urls as _fix_goto
+except ImportError:
+    try:
+        from goto_resolver import fix_goto_urls as _fix_goto
+    except ImportError:
+        def _fix_goto(data, endpoint=None):
+            return data
 import os
 import sys
 import json
@@ -104,7 +112,7 @@ def api_call(endpoint, payload):
     req = urllib.request.Request(url, data=data, headers=headers, method='POST')
     try:
         with urllib.request.urlopen(req, timeout=API_TIMEOUT) as resp:
-            body = json.loads(resp.read())
+            body = _fix_goto(json.loads(resp.read()), endpoint)
     except urllib.error.HTTPError as e:
         err_body = e.read().decode() if e.fp else ''
         print(f"  API HTTP {e.code} on {endpoint}: {err_body[:200]}")

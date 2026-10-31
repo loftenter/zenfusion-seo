@@ -11,6 +11,14 @@ Usage:
     python3 portfolio_audit.py --all --output /tmp/portfolio_audit
 """
 
+try:  # resolve google.com/goto passthrough URLs in SERP responses (see goto_resolver.py)
+    from .goto_resolver import fix_goto_urls as _fix_goto
+except ImportError:
+    try:
+        from goto_resolver import fix_goto_urls as _fix_goto
+    except ImportError:
+        def _fix_goto(data, endpoint=None):
+            return data
 import argparse
 import json
 import math
@@ -92,7 +100,7 @@ class DataForSEOClient:
         try:
             resp = self.session.post(url, json=payload, timeout=120)
             time.sleep(RATE_LIMIT_DELAY)
-            data = resp.json()
+            data = _fix_goto(resp.json(), path)
             return data
         except requests.exceptions.Timeout:
             return {"status_code": 0, "status_message": "Request timed out"}

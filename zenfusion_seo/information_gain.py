@@ -74,6 +74,14 @@ Author: Shlomi Asaf. Share freely.
 
 from __future__ import annotations
 
+try:  # resolve google.com/goto passthrough URLs in SERP responses (see goto_resolver.py)
+    from .goto_resolver import fix_goto_urls as _fix_goto
+except ImportError:
+    try:
+        from goto_resolver import fix_goto_urls as _fix_goto
+    except ImportError:
+        def _fix_goto(data, endpoint=None):
+            return data
 import argparse
 import base64
 import hashlib
@@ -175,7 +183,7 @@ def fetch_serp(query: str) -> list[dict[str, Any]]:
         r = httpx.post(DFS_ENDPOINT, headers=dfs_auth_header(),
                        json=payload, timeout=120)
         r.raise_for_status()
-        items = r.json()["tasks"][0]["result"][0]["items"]
+        items = _fix_goto(r.json(), 'serp/')["tasks"][0]["result"][0]["items"]
         organic = [i for i in items if i.get("type") == "organic"]
         # DataForSEO checks array (replaces deprecated booleans as of Jan 20, 2027)
         # checks is null when no special properties, or a list of property strings

@@ -13,6 +13,14 @@ Integrates ALL audit tools into one comprehensive report:
 Usage: python3 page_auditor.py <url> <keyword> [--output path]
 """
 
+try:  # resolve google.com/goto passthrough URLs in SERP responses (see goto_resolver.py)
+    from .goto_resolver import fix_goto_urls as _fix_goto
+except ImportError:
+    try:
+        from goto_resolver import fix_goto_urls as _fix_goto
+    except ImportError:
+        def _fix_goto(data, endpoint=None):
+            return data
 import sys, os, json, re, base64, urllib.request, urllib.parse, ssl, time
 from urllib.parse import urlparse
 from collections import defaultdict
@@ -1019,7 +1027,7 @@ def dfs_api(endpoint, payload):
                                  headers={"Authorization": f"Basic {creds}",
                                           "Content-Type": "application/json"}, method="POST")
     with urllib.request.urlopen(req, timeout=90) as resp:
-        return json.loads(resp.read())
+        return _fix_goto(json.loads(resp.read()), endpoint)
 
 def fetch_serp(keyword):
     """Fetch SERP organic results + AI Overview from DataForSEO."""
