@@ -41,6 +41,11 @@ class GotoResolverTests(unittest.TestCase):
         self.assertEqual(items[2]["references"][0]["domain"], "b.com")
         self.assertEqual(items[2]["links"], [MAP[G1]])
 
+    def test_rerun_is_noop(self):
+        d = copy.deepcopy(DATA)
+        g.apply_mapping(d, MAP)
+        self.assertEqual(g.collect_goto_urls(d), [])
+
     def test_non_serp_endpoint_untouched(self):
         self.assertEqual(g.fix_goto_urls({"x": G1}, "backlinks/summary/live"), {"x": G1})
 

@@ -87,7 +87,8 @@ def collect_goto_urls(data):
     while stack:
         cur = stack.pop()
         if isinstance(cur, dict):
-            stack.extend(cur.values())
+            # "goto_url" holds the original link we already resolved; don't resend it
+            stack.extend(v for k, v in cur.items() if k != "goto_url")
         elif isinstance(cur, list):
             stack.extend(cur)
         elif is_goto(cur) and cur.strip() not in seen:
@@ -162,6 +163,8 @@ def apply_mapping(data, mapping):
     replaced = 0
     for d in list(_walk(data)):
         for k, v in list(d.items()):
+            if k == "goto_url":
+                continue
             if isinstance(v, str) and v.strip() in mapping:
                 d[k] = mapping[v.strip()]
                 replaced += 1
